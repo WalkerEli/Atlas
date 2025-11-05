@@ -1,0 +1,6 @@
+discord.py>=2.3
+python-dotenv>=1.0
+SQLAlchemy>=2.0
+aiosqlite>=0.20
+requests>=2.31
+APScheduler>=3.10
