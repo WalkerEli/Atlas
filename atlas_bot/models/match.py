@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey, UniqueConstraint
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey, UniqueConstraint, Index
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from .db import Base
@@ -28,3 +28,8 @@ class R6LifetimeAgg(Base):
     deaths = Column(Integer, default=0)
     wins = Column(Integer, default=0)
     losses = Column(Integer, default=0)
+    
+Index("ix_r6agg_kills", R6LifetimeAgg.kills)
+Index("ix_r6agg_deaths", R6LifetimeAgg.deaths)
+Index("ix_r6agg_wins", R6LifetimeAgg.wins)
+Index("ix_r6agg_losses", R6LifetimeAgg.losses)
