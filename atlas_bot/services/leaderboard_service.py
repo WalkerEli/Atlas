@@ -1,5 +1,3 @@
-# provides read-only leaderboard queries from lifetime aggregates
-
 from sqlalchemy.orm import Session
 from atlas_bot.models.db import SessionLocal
 from atlas_bot.models.player import Player
