@@ -3,6 +3,8 @@ from .rules import R6_KILL_MILESTONES, R6_WINRATE_MILESTONES
 from atlas_bot.models.achievment import Achievement, Unlock
 from atlas_bot.models.match import R6LifetimeAgg
 
+
+
 # Register achievements in the database 
 def ensure_catalog(db: Session) -> None:
     all_milestones = R6_KILL_MILESTONES + R6_WINRATE_MILESTONES
