@@ -46,23 +46,8 @@ def r6_player(username: str,
             try:
                 return {"status": "ok", "data": r6_player_stats(username, platform, family)}
             except R6StatsError:
-                # fallback if explicit platform misses
                 return {"status": "ok", "data": r6_player_stats_try_all_platforms(username, family)}
         else:
             return {"status": "ok", "data": r6_player_stats_try_all_platforms(username, family)}
     except R6StatsError as e:
-        # 404 is clearer than 200 with zeros
         raise HTTPException(status_code=404, detail=str(e))
-
-@app.get("/r6/debug/account")
-def debug_account(username: str, platform: Literal["uplay","psn","xbl"]):
-    # shows the raw accountInfo payload the upstream returns
-    return _get(f"{BASE}", {"type": "accountInfo", "nameOnPlatform": username, "platformType": platform})
-
-@app.get("/r6/debug/stats")
-def debug_stats(username: str,
-                platform: Literal["uplay","psn","xbl"] = Query("uplay"),
-                family: Literal["pc","console"] = Query("pc")):
-    # bypasses our normalization and shows raw stats payload
-    return _get(f"{BASE}", {"type": "stats", "nameOnPlatform": username,
-                            "platformType": platform, "platform_families": family})
