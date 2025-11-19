@@ -1,3 +1,8 @@
+import asyncio
+import logging
+import os
+import discord
+import discord.ext.commands as commands
 from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel
 from typing import Optional
@@ -6,14 +11,36 @@ from atlas_bot.services.award_service import ingest_r6_ranked_match
 from atlas_bot.services.leaderboard_service import kills_top, kdr_top, wlr_top
 from atlas_bot.services.stats_service import BASE, R6StatsError, _get, r6_player_stats, r6_player_stats_try_all_platforms
 
-app = FastAPI(title="Atlas Discord Bot API")
+logging.basicConfig(level=logging.INFO)  
+INTENTS = discord.Intents.default()
+INTENTS.members = True
+INTENTS.guilds = True
+INTENTS.message_content = False
 
+DEV_GUILD_ID = "placeholder" # Replace this with the Guild-ID as an integer
+
+class AtlasBot(commands.Bot):
+    def __init__(self):
+        super().__init__(command_prefix="!", intents=INTENTS)
+
+    async def setup_hook(self):
+        await self.load_extension("events")
+        try:
+            await self.tree.sync(guild=discord.Object(id=DEV_GUILD_ID))
+            print(f"[setup] Slash commands synced to guild {DEV_GUILD_ID}")
+        except discord.Forbidden:
+            await self.tree.sync()
+            print("[setup] Guild sync forbidden; synced globally (may take a minute).")
+            
 class R6MatchPayload(BaseModel):
     discord_id: str
     remote_match_id: str
     kills: int
     deaths: int
     win: Optional[bool] = None
+
+bot = AtlasBot()
+app = FastAPI(title="Atlas Discord Bot API")
 
 @app.post("/webhooks/r6/ranked")
 def r6_ranked_match(payload: R6MatchPayload):
@@ -51,3 +78,17 @@ def r6_player(username: str,
             return {"status": "ok", "data": r6_player_stats_try_all_platforms(username, family)}
     except R6StatsError as e:
         raise HTTPException(status_code=404, detail=str(e))
+    
+@bot.event
+async def on_ready():
+    print(f"[ready] Logged in as {bot.user} (ID: {bot.user.id})")
+
+async def main():
+    token = os.getenv("DISCORD_TOKEN")
+    if not token:
+        raise SystemExit("Set DISCORD_TOKEN environment variable.")
+    async with bot:
+        await bot.start(token)
+
+if __name__ == "__main__":
+    asyncio.run(main())

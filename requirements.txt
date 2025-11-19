@@ -1,9 +1,11 @@
 fastapi>=0.115
 uvicorn[standard]>=0.30
 SQLAlchemy>=2.0
-aiosqlite>=0.20
+aiosqlite>=0.20.0
 python-dotenv>=1.0
 requests>=2.31
 APScheduler>=3.10
-discord.py>=2.3
+discord.py>=2.3.2
 requests>=2.31
+python-dateutil>=2.9.0
+
