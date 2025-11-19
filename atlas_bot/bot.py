@@ -17,7 +17,6 @@ intents.message_content = True  # needed for reading normal messages / commands
 # create the bot instance with a simple command prefix
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-
 @bot.event
 async def on_ready():
     # this runs when the bot has connected to discord
