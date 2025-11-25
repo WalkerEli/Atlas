@@ -1,136 +1,109 @@
+# atlas_bot/main.py
+
 import asyncio
 import logging
 import os
-from typing import Optional
+from typing import List
 
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from typing_extensions import Literal
 
-from atlas_bot.services.award_service import ingest_r6_ranked_match
-from atlas_bot.services.leaderboard_service import kills_top, kdr_top, wlr_top
-from atlas_bot.services.stats_service import (
-    BASE,
-    R6StatsError,
-    _get,
-    r6_player_stats,
-    r6_player_stats_try_all_platforms,
-)
-
-# ---------------------------------------------------------------------------
-# env & logging
-# ---------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
+# config / env
+# -----------------------------------------------------------------------------
 
 load_dotenv()
-logging.basicConfig(level=logging.INFO)
 
-# ---------------------------------------------------------------------------
-# discord bot setup
-# ---------------------------------------------------------------------------
+DISCORD_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
+if not DISCORD_TOKEN:
+    raise RuntimeError("DISCORD_BOT_TOKEN is not set in your .env file")
 
-INTENTS = discord.Intents.default()
-INTENTS.members = True
-INTENTS.guilds = True
-INTENTS.message_content = True  # enables prefix commands later if you add them
+# logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+)
 
-# simple commands.Bot instance; we can add commands/cogs later
-bot = commands.Bot(command_prefix="!", intents=INTENTS)
+logger = logging.getLogger("atlas_bot")
+
+# -----------------------------------------------------------------------------
+# intents & bot setup
+# -----------------------------------------------------------------------------
+
+intents = discord.Intents.default()
+intents.message_content = True      # for normal commands
+intents.members = True              # for member info / leaderboards
+intents.voice_states = True         # for music
+
+
+class MasterBot(commands.Bot):
+    def __init__(self) -> None:
+        super().__init__(
+            command_prefix="!",
+            intents=intents,
+            application_id=None,  # you can set this if desired
+        )
+
+    async def setup_hook(self) -> None:
+        """
+        Called by discord.py before the bot connects.
+        Use this to load feature extensions / cogs.
+        """
+        # Full dotted paths to your feature modules
+        initial_extensions: List[str] = [
+            "atlas_bot.features.events",
+            "atlas_bot.features.music",
+            "atlas_bot.features.achievements.cog",
+            "atlas_bot.features.stats",
+            # add more as you create them (e.g., admin, fun, moderation, etc.)
+        ]
+
+        for ext in initial_extensions:
+            try:
+                await self.load_extension(ext)
+                logger.info("Loaded extension %s", ext)
+            except Exception as exc:
+                logger.exception("Failed to load extension %s: %s", ext, exc)
+
+        # Sync slash commands once on startup (for app_commands / hybrid commands)
+        try:
+            synced = await self.tree.sync()
+            logger.info("Synced %d application commands", len(synced))
+        except Exception as exc:
+            logger.exception("Failed to sync app commands: %s", exc)
+
+
+bot = MasterBot()
+
+# -----------------------------------------------------------------------------
+# global / core commands (live on the master bot)
+# -----------------------------------------------------------------------------
 
 
 @bot.event
 async def on_ready():
-    print(f"[ready] logged in as {bot.user} (ID: {bot.user.id})")
+    logger.info("Logged in as %s (ID: %s)", bot.user, bot.user.id)
+    logger.info("------")
 
 
-def get_discord_token() -> str:
-    token = os.getenv("DISCORD_TOKEN")
-    if not token:
-        raise SystemExit("Set DISCORD_TOKEN in your .env or environment.")
-    print("loaded discord token length:", len(token))
-    print("first 10 chars of token:", token[:10])
-    return token
+@bot.hybrid_command(name="ping", description="Check if the bot is alive")
+async def ping(ctx: commands.Context):
+    """Simple ping command (works as !ping or /ping)."""
+    await ctx.reply("Pong!", mention_author=False)
 
 
-# ---------------------------------------------------------------------------
-# fastapi app & models
-# ---------------------------------------------------------------------------
-
-class R6MatchPayload(BaseModel):
-    discord_id: str
-    remote_match_id: str
-    kills: int
-    deaths: int
-    win: Optional[bool] = None
+# add any other core commands that don't logically belong to a feature here
 
 
-app = FastAPI(title="Atlas Discord Bot API")
+# -----------------------------------------------------------------------------
+# entrypoint
+# -----------------------------------------------------------------------------
 
-
-@app.post("/webhooks/r6/ranked")
-def r6_ranked_match(payload: R6MatchPayload):
-    return ingest_r6_ranked_match(
-        discord_id=payload.discord_id,
-        remote_match_id=payload.remote_match_id,
-        kills=payload.kills,
-        deaths=payload.deaths,
-        win=payload.win,
-    )
-
-
-@app.get("/leaderboards/r6/kills")
-def lb_kills(limit: int = 25):
-    return {"metric": "kills_lifetime", "rows": kills_top(limit)}
-
-
-@app.get("/leaderboards/r6/kdr")
-def lb_kdr(limit: int = 25):
-    return {"metric": "kdr_lifetime", "rows": kdr_top(limit)}
-
-
-@app.get("/leaderboards/r6/wlr")
-def lb_wlr(limit: int = 25):
-    return {"metric": "wlr_lifetime", "rows": wlr_top(limit)}
-
-
-@app.get("/r6/player")
-def r6_player(
-    username: str,
-    platform: str | None = None,
-    family: str = "pc",
-):
-    try:
-        if platform:
-            try:
-                return {
-                    "status": "ok",
-                    "data": r6_player_stats(username, platform, family),
-                }
-            except R6StatsError:
-                return {
-                    "status": "ok",
-                    "data": r6_player_stats_try_all_platforms(username, family),
-                }
-        else:
-            return {
-                "status": "ok",
-                "data": r6_player_stats_try_all_platforms(username, family),
-            }
-    except R6StatsError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-
-
-# ---------------------------------------------------------------------------
-# bot entrypoint (used when you run `python main.py`)
-# ---------------------------------------------------------------------------
-
-async def run_bot() -> None:
-    token = get_discord_token()
+async def main() -> None:
     async with bot:
-        await bot.start(token)
+        await bot.start(DISCORD_TOKEN)
 
 
 if __name__ == "__main__":
-    asyncio.run(run_bot())
+    asyncio.run(main())
