@@ -53,7 +53,7 @@ class MasterBot(commands.Bot):
         # Full dotted paths to your feature modules
         initial_extensions: List[str] = [
             "atlas_bot.features.events",
-            "atlas_bot.features.music",
+            # "atlas_bot.features.music",
             "atlas_bot.features.achievements.cog",
             "atlas_bot.features.stats",
             # add more as you create them (e.g., admin, fun, moderation, etc.)

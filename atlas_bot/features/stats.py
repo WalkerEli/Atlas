@@ -236,6 +236,10 @@ class StatsCog(commands.Cog):
 async def setup(bot: commands.Bot) -> None:
     cog = StatsCog(bot)
     await bot.add_cog(cog)
-    # register `/r6 ...` and `/leaderboard ...` groups
-    bot.tree.add_command(cog.r6)
-    bot.tree.add_command(cog.leaderboard)
+
+    # Only register command groups if not already present
+    if bot.tree.get_command("r6") is None:
+        bot.tree.add_command(cog.r6)
+
+    if bot.tree.get_command("leaderboard") is None:
+        bot.tree.add_command(cog.leaderboard)
