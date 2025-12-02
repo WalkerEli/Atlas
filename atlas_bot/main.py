@@ -1,10 +1,8 @@
 # atlas_bot/main.py
-
 import asyncio
 import logging
 import os
 from typing import List
-
 import discord
 from discord.ext import commands
 from dotenv import load_dotenv
@@ -25,16 +23,16 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
 
-logger = logging.getLogger("atlas_bot")
+logger = logging.getLogger("main.py")
 
 # -----------------------------------------------------------------------------
 # intents & bot setup
 # -----------------------------------------------------------------------------
 
 intents = discord.Intents.default()
-intents.message_content = True      # for normal commands
-intents.members = True              # for member info / leaderboards
-intents.voice_states = True         # for music
+intents.message_content = True      
+intents.members = True              
+intents.voice_states = True         
 
 
 class MasterBot(commands.Bot):
@@ -42,7 +40,7 @@ class MasterBot(commands.Bot):
         super().__init__(
             command_prefix="!",
             intents=intents,
-            application_id=None,  # you can set this if desired
+            application_id=None,  
         )
 
     async def setup_hook(self) -> None:
@@ -50,13 +48,11 @@ class MasterBot(commands.Bot):
         Called by discord.py before the bot connects.
         Use this to load feature extensions / cogs.
         """
-        # Full dotted paths to your feature modules
         initial_extensions: List[str] = [
             "atlas_bot.features.events",
-            # "atlas_bot.features.music",
+            "atlas_bot.features.music",
             "atlas_bot.features.achievements.cog",
-            "atlas_bot.features.stats",
-            # add more as you create them (e.g., admin, fun, moderation, etc.)
+            # "atlas_bot.features.stats",
         ]
 
         for ext in initial_extensions:

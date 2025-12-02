@@ -1,15 +1,13 @@
 import logging
 from datetime import timedelta
 from typing import Optional
-
 import discord
 from dateutil import parser as dtparse
 from discord import app_commands
 from discord.ext import commands, tasks
 from zoneinfo import ZoneInfo
-
-from ..services.calender_service import CalendarService
-from ..models.entitys import Event
+from atlas_bot.services.calender_service import CalendarService
+from atlas_bot.models.entitys import Event
 
 log = logging.getLogger(__name__)
 
@@ -383,5 +381,8 @@ class EventCog(commands.Cog):
 async def setup(bot: commands.Bot) -> None:
     cog = EventCog(bot)
     await bot.add_cog(cog)
-    # register the /event group on the app command tree
-    bot.tree.add_command(cog.group)
+
+    # only register /event group if it's not already on the tree
+    existing = bot.tree.get_command("event")
+    if existing is None:
+        bot.tree.add_command(cog.group)

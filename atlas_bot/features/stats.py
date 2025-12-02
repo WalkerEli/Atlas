@@ -1,3 +1,4 @@
+# features/stats.py
 import logging
 from typing import Optional
 import discord
@@ -9,7 +10,7 @@ from ..services.stats_service import (
     r6_player_stats_try_all_platforms,
     R6StatsError,
 )
-from ..services.leaderboard_service import kills_top, kdr_top, wlr_top
+from atlas_bot.services.leaderboard_service import kills_top, kdr_top, wlr_top
 
 log = logging.getLogger(__name__)
 
