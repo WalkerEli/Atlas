@@ -3,7 +3,7 @@ from typing import List, Optional, Tuple
 from datetime import datetime, timezone, timedelta
 from dateutil import parser as dtparse
 
-from models.entitys import Event  
+from atlas_bot.models.entitys import Event  
 
 DB_PATH = "data/events.sqlite"
 
