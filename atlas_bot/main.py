@@ -3,7 +3,9 @@ import asyncio
 import logging
 import os
 from typing import List
+
 import discord
+from discord import app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
 
@@ -17,22 +19,22 @@ DISCORD_TOKEN = os.getenv("DISCORD_BOT_TOKEN")
 if not DISCORD_TOKEN:
     raise RuntimeError("DISCORD_BOT_TOKEN is not set in your .env file")
 
-# logging
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
 )
 
-logger = logging.getLogger("main.py")
+logger = logging.getLogger("atlas_bot.main")
+
 
 # -----------------------------------------------------------------------------
 # intents & bot setup
 # -----------------------------------------------------------------------------
 
 intents = discord.Intents.default()
-intents.message_content = True      
-intents.members = True              
-intents.voice_states = True         
+intents.message_content = True
+intents.members = True
+intents.voice_states = True
 
 
 class MasterBot(commands.Bot):
@@ -40,19 +42,17 @@ class MasterBot(commands.Bot):
         super().__init__(
             command_prefix="!",
             intents=intents,
-            application_id=None,  
+            application_id=None,
         )
 
     async def setup_hook(self) -> None:
-        """
-        Called by discord.py before the bot connects.
-        Use this to load feature extensions / cogs.
-        """
+        """load feature extensions / cogs before connecting"""
+
         initial_extensions: List[str] = [
             "atlas_bot.features.events",
             "atlas_bot.features.music",
-            "atlas_bot.features.achievements.cog",
-            # "atlas_bot.features.stats",
+            "atlas_bot.features.stats",  # new stats feature
+            # "atlas_bot.features.achievements",
         ]
 
         for ext in initial_extensions:
@@ -62,7 +62,6 @@ class MasterBot(commands.Bot):
             except Exception as exc:
                 logger.exception("Failed to load extension %s: %s", ext, exc)
 
-        # Sync slash commands once on startup (for app_commands / hybrid commands)
         try:
             synced = await self.tree.sync()
             logger.info("Synced %d application commands", len(synced))
@@ -72,10 +71,10 @@ class MasterBot(commands.Bot):
 
 bot = MasterBot()
 
-# -----------------------------------------------------------------------------
-# global / core commands (live on the master bot)
-# -----------------------------------------------------------------------------
 
+# -----------------------------------------------------------------------------
+# core events / commands
+# -----------------------------------------------------------------------------
 
 @bot.event
 async def on_ready():
@@ -83,13 +82,55 @@ async def on_ready():
     logger.info("------")
 
 
-@bot.hybrid_command(name="ping", description="Check if the bot is alive")
+@bot.hybrid_command(name="ping", description="check if the bot is alive")
 async def ping(ctx: commands.Context):
-    """Simple ping command (works as !ping or /ping)."""
+    """simple ping command"""
     await ctx.reply("Pong!", mention_author=False)
 
 
-# add any other core commands that don't logically belong to a feature here
+@bot.event
+async def on_command_error(ctx: commands.Context, error: Exception) -> None:
+    """generic error handler for prefix / hybrid commands"""
+
+    if isinstance(error, commands.CommandNotFound):
+        return
+
+    if isinstance(error, commands.CommandInvokeError):
+        original = error.original
+        logger.exception("Unhandled command error: %r", original)
+    else:
+        logger.exception("Unhandled command error: %r", error)
+
+    try:
+        await ctx.reply(
+            "❌ something went wrong running that command. the error has been logged.",
+            mention_author=False,
+        )
+    except Exception:
+        pass
+
+
+@bot.tree.error
+async def on_app_command_error(
+    interaction: discord.Interaction,
+    error: app_commands.AppCommandError,
+) -> None:
+    """generic error handler for slash commands"""
+
+    logger.exception("Unhandled slash command error: %r", error)
+
+    msg = (
+        "❌ something went wrong while running that slash command. "
+        "the error has been logged."
+    )
+
+    try:
+        if interaction.response.is_done():
+            await interaction.followup.send(msg, ephemeral=True)
+        else:
+            await interaction.response.send_message(msg, ephemeral=True)
+    except Exception:
+        pass
 
 
 # -----------------------------------------------------------------------------

@@ -5,7 +5,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands
 
-from ..services.stats_service import (
+from .stats_service import (
     r6_player_stats,
     r6_player_stats_try_all_platforms,
     R6StatsError,
