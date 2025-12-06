@@ -1,9 +1,5 @@
-# atlas_bot/features/achievements/cog.py
-
 from __future__ import annotations
-
 from typing import List
-
 import discord
 from discord.ext import commands
 

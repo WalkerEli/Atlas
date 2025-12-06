@@ -1,13 +1,10 @@
 from __future__ import annotations
-
 import asyncio
 import logging
 from dataclasses import dataclass
 from typing import Dict, List, Optional
-
 import discord
 from discord.ext import commands
-
 from .player import get_audio_stream
 
 logger = logging.getLogger(__name__)
@@ -28,17 +25,6 @@ class Track:
 
 
 class MusicCog(commands.Cog):
-    """
-    prefix-only music feature:
-
-    !join          -> join your voice channel
-    !leave         -> disconnect and clear queue
-    !play <song>   -> play immediately (if idle)
-    !queue <song>  -> add a track to the queue (and start if idle)
-    !skip          -> skip current track, play next from queue
-    !replay        -> replay the current track (insert at front of queue)
-    """
-
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
         # per-guild queue and current track
@@ -148,9 +134,7 @@ class MusicCog(commands.Cog):
                 self.bot.loop,
             )
 
-    # ------------------------------------------------------------
     # commands
-    # ------------------------------------------------------------
 
     @commands.command(name="join")
     async def join(self, ctx: commands.Context) -> None:

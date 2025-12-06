@@ -1,12 +1,7 @@
-# atlas_bot/features/stats/cog.py
-
 from __future__ import annotations
-
 import logging
-
 import discord
 from discord.ext import commands
-
 from atlas_bot.services.stats_service import compute_mock_stats
 from atlas_bot.services.player_stats_store import save_player_stats
 
@@ -14,7 +9,6 @@ log = logging.getLogger(__name__)
 
 
 class StatsCog(commands.Cog):
-    """commands related to mock r6 stats"""
 
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot

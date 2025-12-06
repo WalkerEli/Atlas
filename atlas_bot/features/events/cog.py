@@ -1,13 +1,10 @@
 from __future__ import annotations
-
 import logging
 from typing import Optional
-
 import discord
 from dateutil import parser as dtparse
 from discord import app_commands
 from discord.ext import commands, tasks
-
 from atlas_bot.services.calender_service import CalendarService
 from atlas_bot.models.entitys import Event
 from .ui import RSVPView, embed_for, tz_or_utc
@@ -34,10 +31,6 @@ class EventCog(commands.Cog):
         # initialize DB once when the bot is ready
         await self.svc.init()
         log.info("EventCog ready; CalendarService initialized.")
-
-    # -------------------------------------------------------------------------
-    # /event ...   (attached as a top-level group on the tree)
-    # -------------------------------------------------------------------------
 
     group = app_commands.Group(
         name="event",
@@ -250,10 +243,6 @@ class EventCog(commands.Cog):
         await itx.response.send_message(
             f"RSVP set to **{status.value}**.", ephemeral=True
         )
-
-    # -------------------------------------------------------------------------
-    # background reminders
-    # -------------------------------------------------------------------------
 
     @tasks.loop(minutes=1)
     async def reminders(self) -> None:
