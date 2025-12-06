@@ -1,13 +1,10 @@
 from __future__ import annotations
-
 import logging
 from datetime import timedelta
 from typing import Optional
-
 import discord
 from dateutil import parser as dtparse
 from zoneinfo import ZoneInfo
-
 from atlas_bot.services.calender_service import CalendarService
 from atlas_bot.models.entitys import Event
 

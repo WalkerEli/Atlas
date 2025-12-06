@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 
-# Kill Milestone Dataclass
 @dataclass(frozen=True)
 class KillMilestone:
     code: str
@@ -9,7 +8,6 @@ class KillMilestone:
     description: str
 
 
-# Each KillMilestone below is one achievement the player can earn.
 R6_KILL_MILESTONES = [
     KillMilestone(
         code="kill_100",

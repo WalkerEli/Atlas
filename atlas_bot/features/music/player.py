@@ -19,12 +19,6 @@ async def get_audio_stream(
     *,
     loop: Optional[asyncio.AbstractEventLoop] = None,
 ) -> Tuple[str, str]:
-    """
-    resolve a url or search query into a direct audio stream url and title.
-
-    returns (stream_url, title).
-    raises whatever yt_dlp raises; caller should handle.
-    """
     loop = loop or asyncio.get_running_loop()
 
     def _extract() -> dict:

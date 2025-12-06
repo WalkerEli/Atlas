@@ -1,19 +1,12 @@
-# atlas_bot/main.py
 import asyncio
 import logging
 import os
 from typing import List
-
 import discord
 from discord import app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
-
 from atlas_bot.services.player_stats_store import seed_default_players
-
-# -----------------------------------------------------------------------------
-# config / env
-# -----------------------------------------------------------------------------
 
 load_dotenv()
 
@@ -28,10 +21,6 @@ logging.basicConfig(
 
 logger = logging.getLogger("atlas_bot.main")
 
-
-# -----------------------------------------------------------------------------
-# intents & bot setup
-# -----------------------------------------------------------------------------
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -78,9 +67,8 @@ class MasterBot(commands.Bot):
 bot = MasterBot()
 
 
-# -----------------------------------------------------------------------------
+
 # core events / commands
-# -----------------------------------------------------------------------------
 
 @bot.event
 async def on_ready():
@@ -152,9 +140,7 @@ async def on_app_command_error(
         pass
 
 
-# -----------------------------------------------------------------------------
 # entrypoint
-# -----------------------------------------------------------------------------
 
 async def main() -> None:
     async with bot:
