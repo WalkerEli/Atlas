@@ -9,6 +9,8 @@ from discord import app_commands
 from discord.ext import commands
 from dotenv import load_dotenv
 
+from atlas_bot.services.player_stats_store import seed_default_players
+
 # -----------------------------------------------------------------------------
 # config / env
 # -----------------------------------------------------------------------------
@@ -42,6 +44,7 @@ class MasterBot(commands.Bot):
         super().__init__(
             command_prefix="!",
             intents=intents,
+            # discord.py will fetch the application id after login if this is None
             application_id=None,
         )
 
@@ -51,8 +54,8 @@ class MasterBot(commands.Bot):
         initial_extensions: List[str] = [
             "atlas_bot.features.events",
             "atlas_bot.features.music",
-            "atlas_bot.features.stats",  # new stats feature
-            # "atlas_bot.features.achievements",
+            "atlas_bot.features.stats",
+            "atlas_bot.features.achievements",
         ]
 
         for ext in initial_extensions:
@@ -62,11 +65,14 @@ class MasterBot(commands.Bot):
             except Exception as exc:
                 logger.exception("Failed to load extension %s: %s", ext, exc)
 
+        # seed default leaderboard entries on first run
         try:
-            synced = await self.tree.sync()
-            logger.info("Synced %d application commands", len(synced))
+            seed_default_players()
+            logger.info("Seeded default leaderboard players (if needed)")
         except Exception as exc:
-            logger.exception("Failed to sync app commands: %s", exc)
+            logger.exception("Failed to seed default players: %s", exc)
+
+        # we sync the tree in on_ready
 
 
 bot = MasterBot()
@@ -79,11 +85,24 @@ bot = MasterBot()
 @bot.event
 async def on_ready():
     logger.info("Logged in as %s (ID: %s)", bot.user, bot.user.id)
+
+    # sync application (slash + hybrid) commands once
+    if not getattr(bot, "synced", False):
+        try:
+            synced = await bot.tree.sync()
+            bot.synced = True
+            logger.info("Synced %d application commands", len(synced))
+            for cmd in synced:
+                # use .name instead of .qualified_name for logging
+                logger.info(" - /%s", getattr(cmd, "name", repr(cmd)))
+        except Exception as exc:
+            logger.exception("Failed to sync app commands: %s", exc)
+
     logger.info("------")
 
 
 @bot.hybrid_command(name="ping", description="check if the bot is alive")
-async def ping(ctx: commands.Context):
+async def ping(ctx: commands.Context) -> None:
     """simple ping command"""
     await ctx.reply("Pong!", mention_author=False)
 
@@ -103,7 +122,7 @@ async def on_command_error(ctx: commands.Context, error: Exception) -> None:
 
     try:
         await ctx.reply(
-            "❌ something went wrong running that command. the error has been logged.",
+            "something went wrong running that command. the error has been logged.",
             mention_author=False,
         )
     except Exception:
@@ -120,7 +139,7 @@ async def on_app_command_error(
     logger.exception("Unhandled slash command error: %r", error)
 
     msg = (
-        "❌ something went wrong while running that slash command. "
+        "something went wrong while running that slash command. "
         "the error has been logged."
     )
 
